@@ -1,16 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Page Censor",
+  "name": "Veilmark",
   "version": "1.0.0",
-  "description": "Replace selected words and phrases on web pages with custom text.",
+  "description": "A private, user-defined text filter for the web.",
   "permissions": [
     "storage",
     "activeTab",
     "scripting"
   ],
   "action": {
-    "default_title": "Page Censor",
+    "default_title": "Veilmark",
     "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
   },
   "content_scripts": [
     {

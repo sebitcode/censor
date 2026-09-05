@@ -1,6 +1,6 @@
-# Page Censor
+# Veilmark
 
-Page Censor is a dependency-free Chrome Manifest V3 extension that replaces selected words and phrases with custom text while you browse.
+Veilmark is a dependency-free Chrome Manifest V3 extension that replaces selected words and phrases with custom text while you browse.
 
 ## Features
 
@@ -19,13 +19,13 @@ Page Censor is a dependency-free Chrome Manifest V3 extension that replaces sele
 2. Enable **Developer mode**.
 3. Select **Load unpacked**.
 4. Choose the project directory.
-5. Open the extension popup and add a rule.
+5. Open the **Veilmark** popup and add a rule.
 
 After changing extension files, select **Reload** on the extension card and reload the page being tested.
 
 ## Add a rule
 
-1. Open the Page Censor popup.
+1. Open the Veilmark popup.
 2. Choose a scope:
    - **All pages (global)** applies the rule everywhere.
    - **Current site** applies the rule to the current hostname.
@@ -65,10 +65,14 @@ The tests cover rule normalization, literal matching, scope precedence, and mani
 
 | File | Purpose |
 | --- | --- |
-| `manifest.json` | Chrome Manifest V3 configuration. |
+| `manifest.json` | Chrome Manifest V3 configuration and icon registration. |
 | `popup.html`, `popup.css`, `popup.js` | Rule management interface. |
 | `rules.js` | Rule normalization, scope handling, and matching. |
 | `content.js`, `content.css` | Page scanning, replacement, and first-paint protection. |
+| `assets/icon.svg` | Editable vector source for the extension brand icon. |
+| `assets/icon*.png` | Raster icon sizes used by Chrome. |
+
+The SVG is kept as the editable source; the manifest registers PNG derivatives because Chrome does not support SVG files for extension icons.
 | `tests/` | Node.js tests for the rule engine and manifest. |
 
 ## License

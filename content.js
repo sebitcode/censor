@@ -43,7 +43,7 @@
     try {
       stored = await chrome.storage.sync.get({ rules: [] });
     } catch (error) {
-      console.error("Page Censor could not load saved rules.", error);
+      console.error("Veilmark could not load saved rules.", error);
     }
 
     setSettings(stored.settings ?? { globalRules: stored.rules }, false);

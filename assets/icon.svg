@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Veilmark icon</title>
+  <desc id="desc">A blue shield with two redaction bars.</desc>
+  <defs>
+    <linearGradient id="background" x1="14" y1="12" x2="114" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827" />
+      <stop offset="1" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="shield" x1="36" y1="24" x2="94" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7dd3fc" />
+      <stop offset="1" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#background)" />
+  <path d="M64 18 101 32v27c0 24-14.8 42-37 51-22.2-9-37-27-37-51V32z" fill="url(#shield)" />
+  <path d="M64 30 89 39v20c0 16.8-9.3 29.4-25 38-15.7-8.6-25-21.2-25-38V39z" fill="#0f172a" />
+  <path d="M45 60h38" fill="none" stroke="#f8fafc" stroke-linecap="round" stroke-width="8" />
+  <path d="M51 77h26" fill="none" stroke="#38bdf8" stroke-linecap="round" stroke-width="8" />
+</svg>
