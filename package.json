@@ -1,6 +1,7 @@
 {
   "name": "page-censor-extension",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "test": "node --test tests/*.test.js"
   }

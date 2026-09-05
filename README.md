@@ -1,33 +1,76 @@
 # Page Censor
 
-Page Censor is a dependency-free Chrome Manifest V3 extension that replaces user-selected words and phrases with custom text on web pages.
+Page Censor is a dependency-free Chrome Manifest V3 extension that replaces selected words and phrases with custom text while you browse.
 
-## Quick path
+## Features
 
-1. Open `chrome://extensions` in Chrome.
+- Global rules that apply to every website.
+- Site rules grouped by hostname, such as `example.com`.
+- Site rules override global rules when they use the same term.
+- Case-insensitive literal matching for words and phrases.
+- Automatic processing of content added after the page loads.
+- Collapsible rule sections in the popup.
+- Original text restoration when a rule is removed.
+- Initial page hiding to prevent an uncensored content flash.
+
+## Install in Chrome
+
+1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Select **Load unpacked** and choose this directory.
-4. Open the extension popup, choose **All pages (global)** or the current site, enter a word and its replacement, then select **Add rule**.
-5. Visit or reload a web page to see the rule applied.
+3. Select **Load unpacked**.
+4. Choose the project directory.
+5. Open the extension popup and add a rule.
 
-## Behavior
+After changing extension files, select **Reload** on the extension card and reload the page being tested.
 
-- Rules are saved with `chrome.storage.sync`.
-- Rules can be scoped globally or to a specific site hostname. Site rules override a global rule when they use the same term.
-- The popup displays one section for global rules and one section for every configured site.
-- Rule sections are collapsible; the current site starts expanded and other sections stay compact.
-- Matching is literal and case-insensitive.
-- Replacement is limited to visible page text nodes; HTML markup, attributes, scripts, styles, textareas, and content-editable fields are left untouched.
-- A `MutationObserver` applies rules to content added after the page loads.
-- Removing a rule restores the original text when the page content is rescanned.
-- The page stays visually hidden until the initial scan completes, preventing an uncensored content flash. A short fail-safe reveals it if initialization cannot finish.
+## Add a rule
 
-## Verification
+1. Open the Page Censor popup.
+2. Choose a scope:
+   - **All pages (global)** applies the rule everywhere.
+   - **Current site** applies the rule to the current hostname.
+3. Enter the word or phrase to censor.
+4. Enter the replacement text.
+5. Select **Add rule**.
 
-Run the rule-engine tests with:
+The popup keeps one collapsible section for global rules and one section for every configured site. Rules are stored with `chrome.storage.sync`.
+
+## How it works
+
+The extension combines global rules with rules for the current hostname. If both scopes contain the same term, the site-specific replacement wins. Matching is performed on text nodes instead of raw `innerHTML`, which keeps markup, attributes, scripts, and styles intact.
+
+The content script runs at `document_start`. A small CSS gate keeps the document visually hidden until the first scan finishes. A `MutationObserver` then processes text added by single-page applications and other dynamic interfaces.
+
+## Permissions
+
+| Permission | Purpose |
+| --- | --- |
+| `storage` | Persist global and site-specific rules with `chrome.storage.sync`. |
+| `activeTab` | Apply updated rules to the tab where the popup is used. |
+| `scripting` | Initialize the content script in tabs that were already open. |
+
+The extension changes visible page text; it does not block network requests or prevent a website from downloading its content.
+
+## Development
+
+There is no build step. Run the tests with:
 
 ```bash
 npm test
 ```
 
-The extension has no build step. After changing `manifest.json` or extension scripts, select **Reload** on its card in `chrome://extensions`.
+The tests cover rule normalization, literal matching, scope precedence, and manifest timing.
+
+## Project structure
+
+| File | Purpose |
+| --- | --- |
+| `manifest.json` | Chrome Manifest V3 configuration. |
+| `popup.html`, `popup.css`, `popup.js` | Rule management interface. |
+| `rules.js` | Rule normalization, scope handling, and matching. |
+| `content.js`, `content.css` | Page scanning, replacement, and first-paint protection. |
+| `tests/` | Node.js tests for the rule engine and manifest. |
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
