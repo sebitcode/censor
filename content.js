@@ -41,7 +41,7 @@
     let stored = { rules: [], settings: null };
 
     try {
-      stored = await chrome.storage.sync.get({ rules: [] });
+      stored = await chrome.storage.sync.get({ rules: [], settings: null });
     } catch (error) {
       console.error("Veilmark could not load saved rules.", error);
     }
