@@ -61,6 +61,37 @@ npm test
 
 The tests cover rule normalization, literal matching, scope precedence, and manifest timing.
 
+## Publish to the Chrome Web Store
+
+The repository includes `.github/workflows/publish-chrome-web-store.yml`. It runs on `v*.*.*` tags or from **Actions > Publish Veilmark to Chrome Web Store > Run workflow**.
+
+### One-time setup
+
+The current Chrome Web Store API requires an existing store item. Create the item manually in the [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole), complete the Store listing and Privacy tabs, and then configure these GitHub repository secrets:
+
+| Secret | Value |
+| --- | --- |
+| `CWS_PUBLISHER_ID` | Publisher ID from the Developer Dashboard. |
+| `CWS_EXTENSION_ID` | ID of the Veilmark item in the Chrome Web Store. |
+| `CWS_CLIENT_ID` | OAuth client ID from the Google Cloud project. |
+| `CWS_CLIENT_SECRET` | OAuth client secret. |
+| `CWS_REFRESH_TOKEN` | OAuth refresh token with the `chromewebstore` scope. |
+
+Enable the Chrome Web Store API in Google Cloud before creating the OAuth credentials. Keep all five values in GitHub Secrets; never commit them to the repository. See the [Chrome Web Store API setup guide](https://developer.chrome.com/docs/webstore/using-api) for the Google Cloud and OAuth steps.
+
+### Release a version
+
+The tag must match the `version` in `manifest.json`:
+
+```bash
+# First update manifest.json, for example from 1.0.0 to 1.0.1.
+git commit -am "release: bump extension version to 1.0.1"
+git tag v1.0.1
+git push origin main --tags
+```
+
+The workflow runs the tests, creates a clean extension ZIP, uploads it through Chrome Web Store API v2, waits for asynchronous upload completion, and submits it for review. Chrome Web Store approval is still required before the new version becomes available to users.
+
 ## Project structure
 
 | File | Purpose |

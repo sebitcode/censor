@@ -1,0 +1,209 @@
+name: Publish Veilmark to Chrome Web Store
+
+"on":
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chrome-web-store-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate manifest and release version
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+          const releaseRef = process.env.RELEASE_REF || "";
+          const versionPattern = /^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){0,3}$/;
+
+          if (!versionPattern.test(manifest.version)) {
+            throw new Error(`Invalid Chrome extension version: ${manifest.version}`);
+          }
+
+          if (releaseRef.startsWith("v") && releaseRef.slice(1) !== manifest.version) {
+            throw new Error(
+              `Tag ${releaseRef} does not match manifest version ${manifest.version}`
+            );
+          }
+
+          console.log(`Preparing Veilmark ${manifest.version}`);
+          NODE
+
+      - name: Run tests
+        run: npm test
+
+      - name: Package extension
+        id: package
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./manifest.json').version")"
+          package_path="dist/veilmark-${version}.zip"
+
+          mkdir -p dist
+          PACKAGE_PATH="$package_path" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+
+          package_path = Path(os.environ["PACKAGE_PATH"])
+          files = [
+              Path("manifest.json"),
+              Path("content.css"),
+              Path("content.js"),
+              Path("rules.js"),
+              Path("popup.html"),
+              Path("popup.css"),
+              Path("popup.js"),
+          ]
+          files.extend(sorted(Path("assets").iterdir()))
+
+          with ZipFile(package_path, "w", compression=ZIP_DEFLATED) as archive:
+              for file_path in files:
+                  archive.write(file_path, file_path.as_posix())
+          PY
+
+          echo "path=$package_path" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          python3 -m zipfile -l "$package_path"
+
+      - name: Validate Chrome Web Store secrets
+        run: |
+          set -euo pipefail
+          for variable in \
+            CWS_PUBLISHER_ID \
+            CWS_EXTENSION_ID \
+            CWS_CLIENT_ID \
+            CWS_CLIENT_SECRET \
+            CWS_REFRESH_TOKEN; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "::error title=Missing secret::$variable is not configured."
+              exit 1
+            fi
+          done
+
+      - name: Get OAuth access token
+        id: token
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          if ! curl --silent --show-error --fail-with-body \
+              --request POST \
+              --url "https://oauth2.googleapis.com/token" \
+              --data-urlencode "client_id=${CWS_CLIENT_ID}" \
+              --data-urlencode "client_secret=${CWS_CLIENT_SECRET}" \
+              --data-urlencode "refresh_token=${CWS_REFRESH_TOKEN}" \
+              --data-urlencode "grant_type=refresh_token" \
+              --output "$response_file"; then
+            cat "$response_file"
+            exit 1
+          fi
+
+          access_token="$(jq -r '.access_token // empty' "$response_file")"
+          if [[ -z "$access_token" ]]; then
+            cat "$response_file"
+            exit 1
+          fi
+
+          echo "::add-mask::$access_token"
+          echo "access_token=$access_token" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package
+        env:
+          CWS_ACCESS_TOKEN: ${{ steps.token.outputs.access_token }}
+          PACKAGE_PATH: ${{ steps.package.outputs.path }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          endpoint="https://chromewebstore.googleapis.com/upload/v2/publishers/${CWS_PUBLISHER_ID}/items/${CWS_EXTENSION_ID}:upload"
+
+          if ! curl --silent --show-error --fail-with-body \
+              --request POST \
+              --header "Authorization: Bearer ${CWS_ACCESS_TOKEN}" \
+              --header "Content-Type: application/zip" \
+              --data-binary "@${PACKAGE_PATH}" \
+              --url "$endpoint" \
+              --output "$response_file"; then
+            cat "$response_file"
+            exit 1
+          fi
+
+          upload_state="$(jq -r '.uploadState // empty' "$response_file")"
+          echo "Upload state: ${upload_state:-UNKNOWN}"
+
+          if [[ "$upload_state" == "IN_PROGRESS" ]]; then
+            status_endpoint="https://chromewebstore.googleapis.com/v2/publishers/${CWS_PUBLISHER_ID}/items/${CWS_EXTENSION_ID}:fetchStatus"
+            for attempt in $(seq 1 12); do
+              sleep 10
+              status_file="$(mktemp)"
+              if ! curl --silent --show-error --fail-with-body \
+                  --request GET \
+                  --header "Authorization: Bearer ${CWS_ACCESS_TOKEN}" \
+                  --url "$status_endpoint" \
+                  --output "$status_file"; then
+                cat "$status_file"
+                rm -f "$status_file"
+                exit 1
+              fi
+              upload_state="$(jq -r '.lastAsyncUploadState // empty' "$status_file")"
+              rm -f "$status_file"
+              echo "Upload poll ${attempt}/12: ${upload_state:-UNKNOWN}"
+
+              if [[ "$upload_state" == "SUCCEEDED" || "$upload_state" == "FAILED" ]]; then
+                break
+              fi
+            done
+          fi
+
+          if [[ "$upload_state" != "SUCCEEDED" ]]; then
+            echo "Chrome Web Store upload did not succeed."
+            cat "$response_file"
+            exit 1
+          fi
+
+      - name: Publish package
+        env:
+          CWS_ACCESS_TOKEN: ${{ steps.token.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          endpoint="https://chromewebstore.googleapis.com/v2/publishers/${CWS_PUBLISHER_ID}/items/${CWS_EXTENSION_ID}:publish"
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          if ! curl --silent --show-error --fail-with-body \
+              --request POST \
+              --header "Authorization: Bearer ${CWS_ACCESS_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data '{"publishType":"DEFAULT_PUBLISH","blockOnWarnings":true}' \
+              --url "$endpoint" \
+              --output "$response_file"; then
+            cat "$response_file"
+            exit 1
+          fi
+
+          jq '{itemId, state, warningInfo}' "$response_file"
