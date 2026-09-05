@@ -59,7 +59,9 @@ There is no build step. Run the tests with:
 npm test
 ```
 
-The tests cover rule normalization, literal matching, scope precedence, and manifest timing.
+The tests cover rule normalization, literal matching, scope precedence, storage compatibility, and manifest timing.
+
+For the complete maintainer and AI-agent reference, start with [`AGENTS.md`](AGENTS.md) and [`docs/README.md`](docs/README.md).
 
 ## Publish to the Chrome Web Store
 
@@ -102,9 +104,9 @@ The workflow runs the tests, creates a clean extension ZIP, uploads it through C
 | `content.js`, `content.css` | Page scanning, replacement, and first-paint protection. |
 | `assets/icon.svg` | Editable vector source for the extension brand icon. |
 | `assets/icon*.png` | Raster icon sizes used by Chrome. |
+| `tests/` | Node.js tests for the rule engine and manifest. |
 
 The SVG is kept as the editable source; the manifest registers PNG derivatives because Chrome does not support SVG files for extension icons.
-| `tests/` | Node.js tests for the rule engine and manifest. |
 
 ## License
 
