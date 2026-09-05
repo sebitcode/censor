@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page Censor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="popup-header">
+        <p class="eyebrow">BROWSER TOOL</p>
+        <h1>Page Censor</h1>
+        <p class="subtitle">Replace words and phrases on the current page.</p>
+      </header>
+
+      <form id="rule-form" class="rule-form">
+        <label for="scope">Apply this rule to</label>
+        <select id="scope" name="scope"></select>
+
+        <label for="term">Word or phrase to censor</label>
+        <input id="term" name="term" type="text" autocomplete="off" required />
+
+        <label for="replacement">Replacement text</label>
+        <input
+          id="replacement"
+          name="replacement"
+          type="text"
+          autocomplete="off"
+          placeholder="[censored]"
+          required
+        />
+
+        <button type="submit" class="primary-button">Add rule</button>
+      </form>
+
+      <section id="rule-groups" class="rule-groups" aria-live="polite"></section>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <p class="hint">Global rules apply everywhere. Site rules apply only to their domain.</p>
+    </main>
+
+    <script src="rules.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

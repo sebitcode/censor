@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Page Censor",
+  "version": "1.0.0",
+  "description": "Replace selected words and phrases on web pages with custom text.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_title": "Page Censor",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "js": [
+        "rules.js",
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+html:not([data-page-censor-ready="true"]),
+html:not([data-page-censor-ready="true"]) body,
+html:not([data-page-censor-ready="true"]) body * {
+  visibility: hidden !important;
+}
