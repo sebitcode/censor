@@ -13,15 +13,29 @@ Veilmark is a dependency-free Chrome Manifest V3 extension that replaces selecte
 - Original text restoration when a rule is removed.
 - Initial page hiding to prevent an uncensored content flash.
 
-## Install in Chrome
+## Use locally
+
+Veilmark runs directly from the repository; there is no build step.
+
+### Load the unpacked extension
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Select **Load unpacked**.
 4. Choose the project directory.
-5. Open the **Veilmark** popup and add a rule.
 
-After changing extension files, select **Reload** on the extension card and reload the page being tested.
+If the project is inside Ubuntu WSL, select this Windows path:
+
+```text
+\\wsl.localhost\Ubuntu-24.04\home\sebitcode\projects\censor
+```
+
+5. Open an HTTP(S) page.
+6. Open the **Veilmark** popup and add a rule.
+
+### Apply source changes
+
+After changing extension files, run `npm test`, select **Reload** on the extension card, and reload the page being tested.
 
 ## Add a rule
 
